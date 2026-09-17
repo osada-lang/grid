@@ -310,7 +310,7 @@ export default function GridDashboard({
       const res = await fetch('/api/measure', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ storeId, mockTrendFactor: 1.15 }),
+        body: JSON.stringify({ storeId }),
       });
 
       if (!res.ok) throw new Error('計測の実行に失敗しました');

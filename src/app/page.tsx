@@ -18,16 +18,5 @@ export default async function Home() {
     console.error('Failed to fetch agencies in Home:', error);
   }
 
-  // もし代理店がなければデフォルト直営店をフォールバック表示
-  if (!agencies || agencies.length === 0) {
-    agencies = [
-      {
-        id: 'agency-direct-001',
-        name: '（直営店）',
-        _count: { stores: 1 },
-      },
-    ];
-  }
-
-  return <MainStoreList initialAgencies={agencies} />;
+  return <MainStoreList initialAgencies={agencies || []} />;
 }

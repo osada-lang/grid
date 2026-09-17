@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { getStoreGridData } from '@/lib/get-store-grid-data';
-import { getDemoGridData } from '@/lib/demo-fallback-data';
 
 export async function GET(
   request: Request,
@@ -11,16 +10,15 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const runId = searchParams.get('runId') || undefined;
 
-    let data = await getStoreGridData(resolvedParams.storeId, runId);
+    const data = await getStoreGridData(resolvedParams.storeId, runId);
 
     if (!data) {
-      data = getDemoGridData();
+      return NextResponse.json({ error: 'Store not found' }, { status: 404 });
     }
 
     return NextResponse.json(data);
   } catch (error: any) {
     console.error('API /api/stores/[storeId]/grid-results error:', error);
-    return NextResponse.json(getDemoGridData());
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
-
