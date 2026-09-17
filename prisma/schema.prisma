@@ -1,0 +1,84 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+datasource db {
+  provider = "sqlite"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Agency {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  stores    Store[]
+}
+
+model Store {
+  id               String           @id @default(uuid())
+  agencyId         String
+  name             String
+  centerLatitude   Float
+  centerLongitude  Float
+  targetName       String           // マッチング判定用（店舗名など）
+  address          String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  agency           Agency           @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  keywords         Keyword[]
+  measurementRuns MeasurementRun[]
+
+  @@index([agencyId])
+}
+
+model Keyword {
+  id          String       @id @default(uuid())
+  storeId     String
+  keywordText String
+  category    String       @default("SUB") // MAIN, SUB, EXCLUDED
+  isMain      Boolean      @default(false)
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  store       Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  rankResults RankResult[]
+
+  @@index([storeId])
+}
+
+model MeasurementRun {
+  id             String       @id @default(uuid())
+  storeId        String
+  executedAt     DateTime     @default(now())
+  gridSize       Int          @default(7) // 7x7
+  intervalMeters Int          @default(500) // 500m
+  status         String       @default("COMPLETED") // COMPLETED, FAILED, IN_PROGRESS
+  notes          String?
+  store          Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  rankResults    RankResult[]
+
+  @@index([storeId])
+}
+
+model RankResult {
+  id               String         @id @default(uuid())
+  measurementRunId String
+  keywordId        String
+  pointX           Int            // -3 ~ +3
+  pointY           Int            // -3 ~ +3
+  latitude         Float
+  longitude        Float
+  rank             Int?           // 順位 (nullまたは100超は圏外)
+  rawTitle         String?        // 取得された実際の店舗タイトル等
+  createdAt        DateTime       @default(now())
+  measurementRun   MeasurementRun @relation(fields: [measurementRunId], references: [id], onDelete: Cascade)
+  keyword          Keyword        @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+
+  @@index([measurementRunId])
+  @@index([keywordId])
+}
+
