@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   MapPin,
-  Plus,
   Play,
   ExternalLink,
   Calendar,
@@ -15,7 +14,6 @@ import {
   ChevronDown,
   ChevronRight,
   RefreshCw,
-  Store as StoreIcon,
   X,
 } from 'lucide-react';
 
@@ -48,7 +46,7 @@ export default function MainStoreList({
 }: {
   initialAgencies: Agency[];
 }) {
-  const [agencies, setAgencies] = useState<Agency[]>(initialAgencies);
+  const [agencies] = useState<Agency[]>(initialAgencies);
   const [openAgencies, setOpenAgencies] = useState<Record<string, boolean>>({});
   const [agencyStores, setAgencyStores] = useState<Record<string, StoreItem[]>>({});
   const [loadingAgency, setLoadingAgency] = useState<Record<string, boolean>>({});
@@ -58,23 +56,8 @@ export default function MainStoreList({
   const [searchResults, setSearchResults] = useState<StoreItem[] | null>(null);
   const [isSearching, setIsSearching] = useState(false);
 
-  // モーダル・フォーム状態
-  const [isAddingStore, setIsAddingStore] = useState(false);
-  const [isAddingAgency, setIsAddingAgency] = useState(false);
   const [measuring, setMeasuring] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-
-  // 新規店舗フォーム
-  const [selectedAgencyId, setSelectedAgencyId] = useState('');
-  const [newAgencyName, setNewAgencyName] = useState('');
-  const [name, setName] = useState('');
-  const [targetName, setTargetName] = useState('');
-  const [address, setAddress] = useState('');
-  const [lat, setLat] = useState('35.665245'); // デフォルト表参道周辺
-  const [lng, setLng] = useState('139.712314');
-  const [kw1, setKw1] = useState('');
-  const [kw2, setKw2] = useState('');
-  const [kw3, setKw3] = useState('');
 
   // 代理店アコーディオンの開閉と遅延ロード
   const toggleAgency = async (agencyId: string) => {
@@ -123,63 +106,6 @@ export default function MainStoreList({
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // 新規代理店追加
-  const handleCreateAgency = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newAgencyName.trim()) return;
-
-    try {
-      const res = await fetch('/api/agencies', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newAgencyName.trim() }),
-      });
-      if (!res.ok) throw new Error('代理店の登録に失敗しました');
-      const data = await res.json();
-      setAgencies((prev) => [...prev, data.agency]);
-      setSelectedAgencyId(data.agency.id);
-      setIsAddingAgency(false);
-      setNewAgencyName('');
-      setMessage(`代理店「${data.agency.name}」を作成しました！`);
-    } catch (err: any) {
-      alert(err.message);
-    }
-  };
-
-  // 新規店舗追加
-  const handleCreateStore = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const keywords = [kw1, kw2, kw3].filter((k) => k.trim() !== '');
-      if (keywords.length === 0) {
-        alert('計測キーワードを少なくとも1つ入力してください');
-        return;
-      }
-
-      const res = await fetch('/api/stores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          agencyId: selectedAgencyId || undefined,
-          name,
-          targetName,
-          address,
-          centerLatitude: parseFloat(lat),
-          centerLongitude: parseFloat(lng),
-          keywords,
-        }),
-      });
-
-      if (!res.ok) throw new Error('店舗登録に失敗しました');
-      setMessage('新規店舗を登録しました！');
-      setIsAddingStore(false);
-      // リロード
-      window.location.reload();
-    } catch (err: any) {
-      alert(err.message);
-    }
-  };
-
   // 全店舗一括計測実行
   const handleRunAllMeasurement = async () => {
     try {
@@ -218,28 +144,6 @@ export default function MainStoreList({
 
           <div className="flex flex-wrap items-center gap-2.5">
             <button
-              onClick={() => {
-                setIsAddingAgency(true);
-                setIsAddingStore(false);
-              }}
-              className="inline-flex items-center bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-semibold px-3.5 py-2.5 rounded-xl transition cursor-pointer"
-            >
-              <Building2 className="w-4 h-4 mr-1.5 text-slate-500" />
-              代理店追加
-            </button>
-
-            <button
-              onClick={() => {
-                setIsAddingStore(true);
-                setIsAddingAgency(false);
-              }}
-              className="inline-flex items-center bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl border border-indigo-200/70 transition cursor-pointer"
-            >
-              <Plus className="w-4 h-4 mr-1.5" />
-              新規店舗追加
-            </button>
-
-            <button
               onClick={handleRunAllMeasurement}
               disabled={measuring}
               className="inline-flex items-center bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition disabled:opacity-50 cursor-pointer"
@@ -271,207 +175,13 @@ export default function MainStoreList({
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             )}
           </div>
         </div>
-
-        {/* 新規代理店追加フォーム */}
-        {isAddingAgency && (
-          <form
-            onSubmit={handleCreateAgency}
-            className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4 animate-in fade-in duration-200"
-          >
-            <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center">
-                <Building2 className="w-5 h-5 mr-2 text-indigo-600" />
-                新規代理店グループ作成
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsAddingAgency(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">代理店名 / 企業名</label>
-              <input
-                type="text"
-                required
-                placeholder="例: 株式会社エージェンシー東京"
-                value={newAgencyName}
-                onChange={(e) => setNewAgencyName(e.target.value)}
-                className="w-full p-2.5 border rounded-lg border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
-              />
-            </div>
-            <div className="flex justify-end space-x-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsAddingAgency(false)}
-                className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100"
-              >
-                キャンセル
-              </button>
-              <button
-                type="submit"
-                className="px-5 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
-              >
-                代理店を作成
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* 新規店舗追加フォーム */}
-        {isAddingStore && (
-          <form
-            onSubmit={handleCreateStore}
-            className="bg-white rounded-2xl p-6 shadow-sm border border-indigo-100 space-y-4 animate-in fade-in duration-200"
-          >
-            <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center">
-                <StoreIcon className="w-5 h-5 mr-2 text-indigo-600" />
-                新規店舗登録
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsAddingStore(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">所属代理店</label>
-                <select
-                  value={selectedAgencyId}
-                  onChange={(e) => setSelectedAgencyId(e.target.value)}
-                  className="w-full p-2.5 border rounded-lg border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-sm"
-                >
-                  <option value="">（直営店 / 指定なし）</option>
-                  {agencies.map((agency) => (
-                    <option key={agency.id} value={agency.id}>
-                      {agency.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">店舗名</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="例: 表参道サロン ○○店"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full p-2.5 border rounded-lg border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">
-                  検索判定用店舗名 (Googleマップ上の完全/部分一致名)
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="例: VOICE 表参道"
-                  value={targetName}
-                  onChange={(e) => setTargetName(e.target.value)}
-                  className="w-full p-2.5 border rounded-lg border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">店舗住所（任意）</label>
-                <input
-                  type="text"
-                  placeholder="例: 東京都港区南青山5-1-1"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="w-full p-2.5 border rounded-lg border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">中心緯度</label>
-                <input
-                  type="number"
-                  step="any"
-                  required
-                  value={lat}
-                  onChange={(e) => setLat(e.target.value)}
-                  className="w-full p-2.5 border rounded-lg border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">中心経度</label>
-                <input
-                  type="number"
-                  step="any"
-                  required
-                  value={lng}
-                  onChange={(e) => setLng(e.target.value)}
-                  className="w-full p-2.5 border rounded-lg border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
-                />
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <label className="block text-xs font-semibold text-slate-600 mb-1">
-                計測指定キーワード (最大3つ)
-              </label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <input
-                  type="text"
-                  placeholder="キーワード① 例: 子連れ 美容院"
-                  value={kw1}
-                  onChange={(e) => setKw1(e.target.value)}
-                  className="p-2.5 border rounded-lg border-slate-300 text-sm outline-none"
-                />
-                <input
-                  type="text"
-                  placeholder="キーワード② 例: キッズカット"
-                  value={kw2}
-                  onChange={(e) => setKw2(e.target.value)}
-                  className="p-2.5 border rounded-lg border-slate-300 text-sm outline-none"
-                />
-                <input
-                  type="text"
-                  placeholder="キーワード③ 例: 個室 美容室"
-                  value={kw3}
-                  onChange={(e) => setKw3(e.target.value)}
-                  className="p-2.5 border rounded-lg border-slate-300 text-sm outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-2 pt-3">
-              <button
-                type="button"
-                onClick={() => setIsAddingStore(false)}
-                className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100"
-              >
-                キャンセル
-              </button>
-              <button
-                type="submit"
-                className="px-5 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
-              >
-                店舗を登録する
-              </button>
-            </div>
-          </form>
-        )}
 
         {/* 検索結果表示モード */}
         {searchResults !== null ? (
@@ -480,7 +190,7 @@ export default function MainStoreList({
               <span>検索結果: {searchResults.length} 件見つかりました</span>
               <button
                 onClick={() => setSearchQuery('')}
-                className="text-indigo-600 hover:underline"
+                className="text-indigo-600 hover:underline cursor-pointer"
               >
                 代理店一覧表示に戻る
               </button>
@@ -617,17 +327,7 @@ export default function MainStoreList({
                           </div>
                         ) : stores.length === 0 ? (
                           <div className="bg-white p-6 rounded-xl border border-dashed border-slate-200 text-center">
-                            <p className="text-xs text-slate-500 mb-2">この代理店にはまだ店舗が登録されていません。</p>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedAgencyId(agency.id);
-                                setIsAddingStore(true);
-                              }}
-                              className="text-xs font-semibold text-indigo-600 hover:underline"
-                            >
-                              ＋ この代理店に店舗を追加する
-                            </button>
+                            <p className="text-xs text-slate-500">この代理店に所属する店舗はありません。</p>
                           </div>
                         ) : (
                           stores.map((store) => {
