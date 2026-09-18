@@ -23,7 +23,7 @@ export async function GET(
     const resolvedParams = await Promise.resolve(params);
     const storeId = resolvedParams.storeId;
 
-    const keywords = await prisma.keyword.findMany({
+    const keywords = await prisma.gridKeyword.findMany({
       where: { storeId },
       orderBy: { createdAt: 'asc' },
     });
@@ -63,7 +63,7 @@ export async function POST(
     const limitInfo = CATEGORY_LIMITS[targetCategory];
 
     // 1. 同一店舗内での重複キーワードチェック
-    const existing = await prisma.keyword.findFirst({
+    const existing = await prisma.gridKeyword.findFirst({
       where: {
         storeId,
         keywordText: trimmedText,
@@ -87,7 +87,7 @@ export async function POST(
 
     // 2. 上限チェック (MAIN: 3, SUB: 5, EXCLUDED: 2)
     if (limitInfo) {
-      const currentCount = await prisma.keyword.count({
+      const currentCount = await prisma.gridKeyword.count({
         where: { storeId, category: targetCategory, isActive: true },
       });
       if (currentCount >= limitInfo.max) {
@@ -100,7 +100,7 @@ export async function POST(
       }
     }
 
-    const keyword = await prisma.keyword.create({
+    const keyword = await prisma.gridKeyword.create({
       data: {
         storeId,
         keywordText: trimmedText,
@@ -132,7 +132,7 @@ export async function PUT(
       return NextResponse.json({ error: 'keywordId is required' }, { status: 400 });
     }
 
-    const currentKeyword = await prisma.keyword.findUnique({
+    const currentKeyword = await prisma.gridKeyword.findUnique({
       where: { id: keywordId, storeId },
     });
 
@@ -143,7 +143,7 @@ export async function PUT(
     // テキスト変更時の重複チェック
     if (keywordText !== undefined && keywordText.trim() !== currentKeyword.keywordText) {
       const trimmedText = keywordText.trim();
-      const duplicate = await prisma.keyword.findFirst({
+      const duplicate = await prisma.gridKeyword.findFirst({
         where: {
           storeId,
           keywordText: trimmedText,
@@ -164,7 +164,7 @@ export async function PUT(
     if (category !== undefined && category !== currentKeyword.category) {
       const limitInfo = CATEGORY_LIMITS[category];
       if (limitInfo) {
-        const currentCount = await prisma.keyword.count({
+        const currentCount = await prisma.gridKeyword.count({
           where: {
             storeId,
             category,
@@ -192,7 +192,7 @@ export async function PUT(
     if (isMain !== undefined && category === undefined) updateData.isMain = isMain;
     if (isActive !== undefined) updateData.isActive = isActive;
 
-    const keyword = await prisma.keyword.update({
+    const keyword = await prisma.gridKeyword.update({
       where: { id: keywordId, storeId },
       data: updateData,
     });
@@ -219,7 +219,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'keywordId is required' }, { status: 400 });
     }
 
-    await prisma.keyword.delete({
+    await prisma.gridKeyword.delete({
       where: { id: keywordId, storeId },
     });
 

@@ -5,7 +5,7 @@ export async function getStoreGridData(storeId: string, targetRunId?: string) {
     const store = await prisma.store.findUnique({
       where: { id: storeId },
       include: {
-        keywords: { where: { isActive: true } },
+        gridKeywords: { where: { isActive: true } },
       },
     });
 
@@ -14,7 +14,7 @@ export async function getStoreGridData(storeId: string, targetRunId?: string) {
     }
 
     // 全ての計測実行履歴リスト
-    const allRuns = await prisma.measurementRun.findMany({
+    const allRuns = await prisma.gridMeasurementRun.findMany({
       where: { storeId: store.id, status: 'COMPLETED' },
       orderBy: { executedAt: 'desc' },
       select: {
@@ -39,11 +39,11 @@ export async function getStoreGridData(storeId: string, targetRunId?: string) {
         runsToFetchIds.push(allRuns[activeIndex + 1].id);
       }
 
-      const fetchedRuns = await prisma.measurementRun.findMany({
+      const fetchedRuns = await prisma.gridMeasurementRun.findMany({
         where: { id: { in: runsToFetchIds } },
         include: {
-          rankResults: {
-            include: { keyword: true },
+          gridRankResults: {
+            include: { gridKeyword: true },
           },
         },
       });
@@ -74,13 +74,13 @@ export async function getStoreGridData(storeId: string, targetRunId?: string) {
         }
       >();
 
-      for (const result of run.rankResults) {
+      for (const result of run.gridRankResults) {
         if (!keywordMap.has(result.keywordId)) {
           keywordMap.set(result.keywordId, {
             keywordId: result.keywordId,
-            keywordText: result.keyword.keywordText,
-            category: (result.keyword as any).category || ((result.keyword as any).isMain ? 'MAIN' : 'SUB'),
-            isMain: (result.keyword as any).category === 'MAIN' || (result.keyword as any).isMain === true,
+            keywordText: result.gridKeyword.keywordText,
+            category: result.gridKeyword.category || (result.gridKeyword.isMain ? 'MAIN' : 'SUB'),
+            isMain: result.gridKeyword.category === 'MAIN' || result.gridKeyword.isMain === true,
             results: [],
           });
         }
@@ -141,10 +141,10 @@ export async function getStoreGridData(storeId: string, targetRunId?: string) {
       store: {
         id: store.id,
         name: store.name,
-        targetName: store.targetName,
-        centerLatitude: store.centerLatitude,
-        centerLongitude: store.centerLongitude,
-        address: store.address,
+        targetName: store.targetName || store.name,
+        centerLatitude: store.centerLatitude ?? 35.681236,
+        centerLongitude: store.centerLongitude ?? 139.767125,
+        address: store.area || null,
         intervalMeters: store.intervalMeters ?? 500,
       },
       latestRun: latestProcessed,

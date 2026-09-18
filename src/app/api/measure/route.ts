@@ -5,7 +5,7 @@ import { executeStoreMeasurement } from '@/lib/measurement-service';
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
-    const { storeId, mockTrendFactor, intervalMeters } = body;
+    const { storeId, intervalMeters } = body;
 
     let targetStores = [];
     if (storeId) {
@@ -25,11 +25,14 @@ export async function POST(request: Request) {
 
     const runs = [];
     for (const store of targetStores) {
-      const run = await executeStoreMeasurement(store.id, {
-        mockTrendFactor,
-        intervalMeters,
-      });
-      runs.push({ storeId: store.id, runId: run.id, status: run.status });
+      try {
+        const run = await executeStoreMeasurement(store.id, {
+          intervalMeters,
+        });
+        runs.push({ storeId: store.id, runId: run.id, status: run.status });
+      } catch (err: any) {
+        console.warn(`Measurement skipped for store ${store.name}:`, err.message);
+      }
     }
 
     return NextResponse.json({

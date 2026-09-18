@@ -8,7 +8,7 @@ export interface MeasurementSummary {
   keywordStats: {
     keywordId: string;
     keywordText: string;
-    avgRank: number; // 圏外は20位換算または除外計算
+    avgRank: number; // 圏外は21位換算
     top3Count: number;
     top10Count: number;
     totalPoints: number;
@@ -16,16 +16,16 @@ export interface MeasurementSummary {
 }
 
 /**
- * 指定された店舗の7x7グリッド順位計測を実行し、完全な新規履歴として保存する
+ * 指定された店舗の7x7グリッド順位計測を実行し、完全な新規履歴として365ボイスDBに保存する
  */
 export async function executeStoreMeasurement(
   storeId: string,
-  options?: { intervalMeters?: number; mockTrendFactor?: number }
+  options?: { intervalMeters?: number }
 ) {
   const store = await prisma.store.findUnique({
     where: { id: storeId },
     include: {
-      keywords: {
+      gridKeywords: {
         where: { isActive: true },
       },
     },
@@ -35,23 +35,28 @@ export async function executeStoreMeasurement(
     throw new Error(`Store with ID ${storeId} not found.`);
   }
 
-  if (store.keywords.length === 0) {
-    throw new Error(`Store ${store.name} has no active keywords.`);
+  if (store.gridKeywords.length === 0) {
+    throw new Error(`店舗「${store.name}」には有効なキーワードが登録されていません。先にキーワードを登録してください。`);
   }
 
   const intervalMeters = options?.intervalMeters ?? store.intervalMeters ?? 500;
   const gridSize = 7; // 7x7
 
+  // 緯度経度（未設定時のデフォルト：東京駅周辺）
+  const centerLat = store.centerLatitude ?? 35.681236;
+  const centerLng = store.centerLongitude ?? 139.767125;
+  const targetName = store.targetName || store.name;
+
   // 1. 7x7 グリッド地点（49地点）の算出
   const gridPoints = calculateGridPoints(
-    store.centerLatitude,
-    store.centerLongitude,
+    centerLat,
+    centerLng,
     gridSize,
     intervalMeters
   );
 
-  // 2. 新規 MeasurementRun レコードを作成（履歴保存ヘッダー）
-  const run = await prisma.measurementRun.create({
+  // 2. 新規 GridMeasurementRun レコードを作成（履歴保存ヘッダー）
+  const run = await prisma.gridMeasurementRun.create({
     data: {
       storeId: store.id,
       gridSize,
@@ -74,13 +79,12 @@ export async function executeStoreMeasurement(
     }[] = [];
 
     // 3. 各キーワード × 49地点で順位取得
-    for (const keyword of store.keywords) {
+    for (const keyword of store.gridKeywords) {
       for (const point of gridPoints) {
         const result: RankFetchResult = await fetchRankAtPoint(
           keyword.keywordText,
           point,
-          store.targetName,
-          { mockTrendFactor: options?.mockTrendFactor }
+          targetName
         );
 
         rankResultData.push({
@@ -96,20 +100,20 @@ export async function executeStoreMeasurement(
       }
     }
 
-    // 4. rank_results に一括挿入
-    await prisma.rankResult.createMany({
+    // 4. GridRankResult に一括挿入
+    await prisma.gridRankResult.createMany({
       data: rankResultData,
     });
 
     // 5. ステータス完了に更新
-    await prisma.measurementRun.update({
+    await prisma.gridMeasurementRun.update({
       where: { id: run.id },
       data: { status: 'COMPLETED' },
     });
 
     return run;
   } catch (error) {
-    await prisma.measurementRun.update({
+    await prisma.gridMeasurementRun.update({
       where: { id: run.id },
       data: { status: 'FAILED' },
     });
@@ -118,15 +122,15 @@ export async function executeStoreMeasurement(
 }
 
 /**
- * 指定された MeasurementRun のキーワード別サマリー（平均順位, TOP3地点数, TOP10地点数）を取得する
+ * 指定された GridMeasurementRun のキーワード別サマリー（平均順位, TOP3地点数, TOP10地点数）を取得する
  */
 export async function getRunSummary(runId: string): Promise<MeasurementSummary> {
-  const run = await prisma.measurementRun.findUnique({
+  const run = await prisma.gridMeasurementRun.findUnique({
     where: { id: runId },
     include: {
-      rankResults: {
+      gridRankResults: {
         include: {
-          keyword: true,
+          gridKeyword: true,
         },
       },
     },
@@ -142,10 +146,10 @@ export async function getRunSummary(runId: string): Promise<MeasurementSummary> 
     { keywordText: string; results: (number | null)[] }
   >();
 
-  for (const res of run.rankResults) {
+  for (const res of run.gridRankResults) {
     if (!grouped.has(res.keywordId)) {
       grouped.set(res.keywordId, {
-        keywordText: res.keyword.keywordText,
+        keywordText: res.gridKeyword.keywordText,
         results: [],
       });
     }
