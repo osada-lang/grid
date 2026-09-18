@@ -27,6 +27,7 @@ model Store {
   centerLongitude  Float
   targetName       String           // マッチング判定用（店舗名など）
   address          String?
+  intervalMeters   Int              @default(500) // グリッド間隔（メートル: 250, 500, 1000, 2000等）
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   agency           Agency           @relation(fields: [agencyId], references: [id], onDelete: Cascade)

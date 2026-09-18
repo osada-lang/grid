@@ -39,7 +39,7 @@ export async function executeStoreMeasurement(
     throw new Error(`Store ${store.name} has no active keywords.`);
   }
 
-  const intervalMeters = options?.intervalMeters ?? 500;
+  const intervalMeters = options?.intervalMeters ?? store.intervalMeters ?? 500;
   const gridSize = 7; // 7x7
 
   // 1. 7x7 グリッド地点（49地点）の算出

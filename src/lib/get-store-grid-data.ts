@@ -145,6 +145,7 @@ export async function getStoreGridData(storeId: string, targetRunId?: string) {
         centerLatitude: store.centerLatitude,
         centerLongitude: store.centerLongitude,
         address: store.address,
+        intervalMeters: store.intervalMeters ?? 500,
       },
       latestRun: latestProcessed,
       previousRun: previousProcessed,
