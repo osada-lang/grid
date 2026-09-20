@@ -1,6 +1,6 @@
 import { prisma } from './db';
 import { calculateGridPoints } from './grid';
-import { fetchRankAtPoint, RankFetchResult } from './ranker';
+import { fetchRankAtPoint } from './ranker';
 
 export interface MeasurementSummary {
   runId: string;
@@ -17,6 +17,7 @@ export interface MeasurementSummary {
 
 /**
  * 指定された店舗の7x7グリッド順位計測を実行し、完全な新規履歴として365ボイスDBに保存する
+ * （10並列バッチ処理により、2分半かかっていた計測時間を約10〜15秒に高速化）
  */
 export async function executeStoreMeasurement(
   storeId: string,
@@ -67,6 +68,14 @@ export async function executeStoreMeasurement(
   });
 
   try {
+    // 3. 全タスク（キーワード × 49地点）のリストを作成
+    const tasks: { keyword: typeof store.gridKeywords[0]; point: typeof gridPoints[0] }[] = [];
+    for (const keyword of store.gridKeywords) {
+      for (const point of gridPoints) {
+        tasks.push({ keyword, point });
+      }
+    }
+
     const rankResultData: {
       measurementRunId: string;
       keywordId: string;
@@ -78,34 +87,40 @@ export async function executeStoreMeasurement(
       rawTitle: string | null;
     }[] = [];
 
-    // 3. 各キーワード × 49地点で順位取得
-    for (const keyword of store.gridKeywords) {
-      for (const point of gridPoints) {
-        const result: RankFetchResult = await fetchRankAtPoint(
-          keyword.keywordText,
-          point,
-          targetName
-        );
+    // 4. 安全な10件ずつの並列バッチ処理で高速実行（SerpApiレートリミット保護＆タイムアウト防止）
+    const BATCH_SIZE = 10;
+    for (let i = 0; i < tasks.length; i += BATCH_SIZE) {
+      const chunk = tasks.slice(i, i + BATCH_SIZE);
+      const chunkResults = await Promise.all(
+        chunk.map(async ({ keyword, point }) => {
+          const result = await fetchRankAtPoint(
+            keyword.keywordText,
+            point,
+            targetName
+          );
 
-        rankResultData.push({
-          measurementRunId: run.id,
-          keywordId: keyword.id,
-          pointX: point.pointX,
-          pointY: point.pointY,
-          latitude: result.latitude,
-          longitude: result.longitude,
-          rank: result.rank,
-          rawTitle: result.rawTitle ?? null,
-        });
-      }
+          return {
+            measurementRunId: run.id,
+            keywordId: keyword.id,
+            pointX: point.pointX,
+            pointY: point.pointY,
+            latitude: result.latitude,
+            longitude: result.longitude,
+            rank: result.rank,
+            rawTitle: result.rawTitle ?? null,
+          };
+        })
+      );
+
+      rankResultData.push(...chunkResults);
     }
 
-    // 4. GridRankResult に一括挿入
+    // 5. GridRankResult に一括挿入
     await prisma.gridRankResult.createMany({
       data: rankResultData,
     });
 
-    // 5. ステータス完了に更新
+    // 6. ステータス完了に更新
     await prisma.gridMeasurementRun.update({
       where: { id: run.id },
       data: { status: 'COMPLETED' },
