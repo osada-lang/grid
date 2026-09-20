@@ -57,6 +57,8 @@ export async function GET(request: Request) {
       centerLatitude: s.centerLatitude ?? 35.681236,
       centerLongitude: s.centerLongitude ?? 139.767125,
       address: s.area || null,
+      intervalMeters: s.intervalMeters ?? 500,
+      isMeasurementActive: s.isMeasurementActive ?? true,
       agencyId: encodeURIComponent(s.area || '（直営・未設定）'),
       agency: {
         id: encodeURIComponent(s.area || '（直営・未設定）'),

@@ -23,7 +23,10 @@ async function handleCronJob(request: Request) {
   }
 
   try {
-    const stores = await prisma.store.findMany();
+    // 計測ON (isMeasurementActive: true) の店舗のみ自動計測
+    const stores = await prisma.store.findMany({
+      where: { isMeasurementActive: true },
+    });
     const results = [];
 
     for (const store of stores) {

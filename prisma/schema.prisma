@@ -16,6 +16,7 @@ model Store {
   centerLatitude      Float?
   centerLongitude     Float?
   intervalMeters      Int                  @default(500)
+  isMeasurementActive Boolean              @default(true) // 計測ON/OFFスイッチ (falseの場合は一括計測から除外)
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   gridKeywords        GridKeyword[]
