@@ -10,13 +10,23 @@ export interface RankFetchResult {
 }
 
 /**
+ * 空白や大文字小文字を正規化して比較するヘルパー関数
+ */
+function normalizeText(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[\s\u3000\-_・]/g, '') // 半角・全角スペースやハイフン、中黒を除去
+    .trim();
+}
+
+/**
  * 1地点におけるキーワードでのGoogleマップ/ローカル検索順位を取得
  */
 export async function fetchRankAtPoint(
   keyword: string,
   point: GridPoint,
   targetName: string,
-  options?: { mockTrendFactor?: number } // モック時の改善幅調整 (例: 1.0 = 通常, 1.2 = 前より良くなる)
+  options?: { mockTrendFactor?: number }
 ): Promise<RankFetchResult> {
   const serpApiKey = process.env.SERPAPI_KEY;
 
@@ -34,16 +44,18 @@ export async function fetchRankAtPoint(
 
       const res = await fetch(url.toString());
       if (!res.ok) {
-        throw new Error(`SerpApi error: ${res.statusText}`);
+        throw new Error(`SerpApi HTTP error: ${res.status} ${res.statusText}`);
       }
 
       const data = await res.json();
       const localResults: Array<{ position: number; title: string }> = data.local_results || [];
 
-      // targetName に部分一致する店舗を検索
-      const match = localResults.find((item) =>
-        item.title.toLowerCase().includes(targetName.toLowerCase())
-      );
+      // targetName に部分一致する店舗を検索（空白・記号の揺らぎを吸収）
+      const normTarget = normalizeText(targetName);
+      const match = localResults.find((item) => {
+        const normTitle = normalizeText(item.title || '');
+        return normTitle.includes(normTarget) || normTarget.includes(normTitle);
+      });
 
       return {
         latitude: point.latitude,
@@ -53,34 +65,24 @@ export async function fetchRankAtPoint(
         rank: match ? match.position : null,
         rawTitle: match ? match.title : undefined,
       };
-    } catch (error) {
-      console.error('SerpApi Error, fallback to mock generation:', error);
+    } catch (error: any) {
+      console.warn(`SerpApi rank fetch error for "${keyword}" at (${point.latitude}, ${point.longitude}):`, error.message);
     }
   }
 
-  // モックモード（APIキー未設定時）
-  // 中心 (0,0) からの距離（グリッド上の距離）
+  // モックモード（APIキー未設定時またはエラー時の自動フォールバック）
   const dist = Math.sqrt(point.pointX * point.pointX + point.pointY * point.pointY);
-  
-  // トレンド因子 (モック時に前回計測からの改善などをシミュレート)
   const trend = options?.mockTrendFactor ?? 1.0;
-
-  // 基本順位の決定 (中心に近いほど上位)
-  const baseRank = Math.round(dist * 3.5 + 1); // 0km = 1位, 離れるほどダウン
+  const baseRank = Math.round(dist * 3.5 + 1);
   
-  // キーワード文字列によるハッシュ的ばらつきを加算
   let hash = 0;
   for (let i = 0; i < keyword.length; i++) {
     hash += keyword.charCodeAt(i);
   }
-  const kwOffset = (hash % 5) - 2; // -2 ~ +2
-  
-  // ノイズ（±1）
+  const kwOffset = (hash % 5) - 2;
   const noise = Math.floor(Math.random() * 3) - 1;
 
   let calculatedRank = Math.round((baseRank + kwOffset + noise) / trend);
-
-  // 範囲制限: 1位〜20位。それ以上は圏外(null)
   if (calculatedRank < 1) calculatedRank = 1;
   const finalRank = calculatedRank > 20 ? null : calculatedRank;
 
