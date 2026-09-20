@@ -40,12 +40,15 @@ export async function executeStoreMeasurement(
     throw new Error(`店舗「${store.name}」には有効なキーワードが登録されていません。先にキーワードを登録してください。`);
   }
 
+  if (store.centerLatitude === null || store.centerLatitude === undefined || store.centerLongitude === null || store.centerLongitude === undefined) {
+    throw new Error(`店舗「${store.name}」の中心緯度・経度が設定されていません。365ボイス側で店舗の緯度経度を設定してください。`);
+  }
+
   const intervalMeters = options?.intervalMeters ?? store.intervalMeters ?? 500;
   const gridSize = 7; // 7x7
 
-  // 緯度経度（未設定時のデフォルト：東京駅周辺）
-  const centerLat = store.centerLatitude ?? 35.681236;
-  const centerLng = store.centerLongitude ?? 139.767125;
+  const centerLat = store.centerLatitude;
+  const centerLng = store.centerLongitude;
   const targetName = store.targetName || store.name;
 
   // 1. 7x7 グリッド地点（49地点）の算出

@@ -21,77 +21,51 @@ function normalizeText(text: string): string {
 
 /**
  * 1地点におけるキーワードでのGoogleマップ/ローカル検索順位を取得
+ * （本番仕様：モック計算は行わず、実APIで順位を取得。未設定や通信エラー時は明確にエラーをスロー）
  */
 export async function fetchRankAtPoint(
   keyword: string,
   point: GridPoint,
-  targetName: string,
-  options?: { mockTrendFactor?: number }
+  targetName: string
 ): Promise<RankFetchResult> {
   const serpApiKey = process.env.SERPAPI_KEY;
 
-  if (serpApiKey) {
-    try {
-      // SerpApi Google Maps Local Search API
-      const url = new URL('https://serpapi.com/search.json');
-      url.searchParams.set('engine', 'google_maps');
-      url.searchParams.set('q', keyword);
-      url.searchParams.set('ll', `@${point.latitude},${point.longitude},15z`);
-      url.searchParams.set('google_domain', 'google.co.jp');
-      url.searchParams.set('hl', 'ja');
-      url.searchParams.set('gl', 'jp');
-      url.searchParams.set('api_key', serpApiKey);
-
-      const res = await fetch(url.toString());
-      if (!res.ok) {
-        throw new Error(`SerpApi HTTP error: ${res.status} ${res.statusText}`);
-      }
-
-      const data = await res.json();
-      const localResults: Array<{ position: number; title: string }> = data.local_results || [];
-
-      // targetName に部分一致する店舗を検索（空白・記号の揺らぎを吸収）
-      const normTarget = normalizeText(targetName);
-      const match = localResults.find((item) => {
-        const normTitle = normalizeText(item.title || '');
-        return normTitle.includes(normTarget) || normTarget.includes(normTitle);
-      });
-
-      return {
-        latitude: point.latitude,
-        longitude: point.longitude,
-        pointX: point.pointX,
-        pointY: point.pointY,
-        rank: match ? match.position : null,
-        rawTitle: match ? match.title : undefined,
-      };
-    } catch (error: any) {
-      console.warn(`SerpApi rank fetch error for "${keyword}" at (${point.latitude}, ${point.longitude}):`, error.message);
-    }
+  if (!serpApiKey) {
+    throw new Error('SERPAPI_KEY が設定されていません。Vercelまたは環境変数に有効なAPIキーを設定してください。');
   }
 
-  // モックモード（APIキー未設定時またはエラー時の自動フォールバック）
-  const dist = Math.sqrt(point.pointX * point.pointX + point.pointY * point.pointY);
-  const trend = options?.mockTrendFactor ?? 1.0;
-  const baseRank = Math.round(dist * 3.5 + 1);
-  
-  let hash = 0;
-  for (let i = 0; i < keyword.length; i++) {
-    hash += keyword.charCodeAt(i);
-  }
-  const kwOffset = (hash % 5) - 2;
-  const noise = Math.floor(Math.random() * 3) - 1;
+  // SerpApi Google Maps Local Search API
+  const url = new URL('https://serpapi.com/search.json');
+  url.searchParams.set('engine', 'google_maps');
+  url.searchParams.set('q', keyword);
+  url.searchParams.set('ll', `@${point.latitude},${point.longitude},15z`);
+  url.searchParams.set('google_domain', 'google.co.jp');
+  url.searchParams.set('hl', 'ja');
+  url.searchParams.set('gl', 'jp');
+  url.searchParams.set('api_key', serpApiKey);
 
-  let calculatedRank = Math.round((baseRank + kwOffset + noise) / trend);
-  if (calculatedRank < 1) calculatedRank = 1;
-  const finalRank = calculatedRank > 20 ? null : calculatedRank;
+  const res = await fetch(url.toString());
+  if (!res.ok) {
+    const errText = await res.text().catch(() => res.statusText);
+    throw new Error(`Googleマップ順位取得APIエラー (${res.status}): ${errText}`);
+  }
+
+  const data = await res.json();
+  const localResults: Array<{ position: number; title: string }> = data.local_results || [];
+
+  // targetName に部分一致する店舗を検索（空白・記号の揺らぎを吸収）
+  const normTarget = normalizeText(targetName);
+  const match = localResults.find((item) => {
+    const normTitle = normalizeText(item.title || '');
+    return normTitle.includes(normTarget) || normTarget.includes(normTitle);
+  });
 
   return {
     latitude: point.latitude,
     longitude: point.longitude,
     pointX: point.pointX,
     pointY: point.pointY,
-    rank: finalRank,
-    rawTitle: `${targetName} (モック表示)`,
+    rank: match ? match.position : null,
+    rawTitle: match ? match.title : undefined,
   };
 }
