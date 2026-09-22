@@ -10,6 +10,7 @@ import {
   Layers,
   Search,
   CheckCircle,
+  AlertCircle,
   Building2,
   ChevronDown,
   ChevronRight,
@@ -61,7 +62,7 @@ export default function MainStoreList({
   const [isSearching, setIsSearching] = useState(false);
 
   const [measuring, setMeasuring] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ text: string; type: 'success' | 'warning' | 'error' } | null>(null);
 
   // 代理店アコーディオンの開閉と遅延ロード
   const toggleAgency = async (agencyId: string) => {
@@ -145,9 +146,12 @@ export default function MainStoreList({
         body: JSON.stringify({ isMeasurementActive: newStatus }),
       });
       if (!res.ok) throw new Error('ステータスの更新に失敗しました');
-      setMessage(`「${storeName}」の計測を${newStatus ? '有効（ON）' : '停止（OFF）'}にしました！`);
+      setMessage({
+        text: `「${storeName}」の計測を${newStatus ? '有効（ON）' : '停止（OFF）'}にしました！`,
+        type: 'success',
+      });
     } catch (err: any) {
-      alert(err.message);
+      setMessage({ text: err.message, type: 'error' });
     }
   };
 
@@ -162,10 +166,31 @@ export default function MainStoreList({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '一括計測に失敗しました');
-      setMessage(data.message || '計測を完了しました！');
-      window.location.reload();
+
+      if (!data.runs || data.runs.length === 0) {
+        setMessage({
+          text: data.message || '計測対象の有効な店舗がありません（すべての店舗で計測がOFFになっている可能性があります）。',
+          type: 'warning',
+        });
+      } else {
+        setMessage({
+          text: data.message || `${data.runs.length} 店舗の計測が完了しました！`,
+          type: 'success',
+        });
+
+        // 展開中のエリアの店舗データをスムーズに再取得（ページ全体の強制リロードなし）
+        for (const agencyId of Object.keys(openAgencies)) {
+          if (openAgencies[agencyId]) {
+            const fetchRes = await fetch(`/api/stores?agencyId=${agencyId}`);
+            if (fetchRes.ok) {
+              const resData = await fetchRes.json();
+              setAgencyStores((prev) => ({ ...prev, [agencyId]: resData.stores || [] }));
+            }
+          }
+        }
+      }
     } catch (err: any) {
-      alert(err.message);
+      setMessage({ text: err.message, type: 'error' });
     } finally {
       setMeasuring(false);
     }
@@ -200,10 +225,37 @@ export default function MainStoreList({
           </div>
         </div>
 
+        {/* 状態通知バナー（消えない＆手動で閉じるまで表示） */}
         {message && (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl flex items-center text-sm font-medium">
-            <CheckCircle className="w-4 h-4 mr-2 text-emerald-600 shrink-0" />
-            <span>{message}</span>
+          <div
+            className={`px-4 py-3 rounded-xl flex items-center justify-between text-sm font-medium animate-in fade-in duration-150 ${
+              message.type === 'warning'
+                ? 'bg-amber-50 border border-amber-200 text-amber-900'
+                : message.type === 'error'
+                ? 'bg-rose-50 border border-rose-200 text-rose-800'
+                : 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+            }`}
+          >
+            <div className="flex items-center space-x-2">
+              {message.type === 'warning' && <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />}
+              {message.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />}
+              {message.type === 'success' && <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />}
+              <span>{message.text}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setMessage(null)}
+              className={`ml-4 p-1 rounded-md transition cursor-pointer ${
+                message.type === 'warning'
+                  ? 'text-amber-600 hover:text-amber-800 hover:bg-amber-100'
+                  : message.type === 'error'
+                  ? 'text-rose-500 hover:text-rose-700 hover:bg-rose-100'
+                  : 'text-emerald-600 hover:text-emerald-800 hover:bg-emerald-100'
+              }`}
+              title="閉じる"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         )}
 
