@@ -3,31 +3,44 @@ import { prisma } from '@/lib/db';
 
 export async function GET() {
   try {
-    const stores = await prisma.store.findMany({
-      select: { area: true, id: true },
+    // 1. 登録されている代理店一覧を取得（店舗数カウント付き）
+    const agencies = await prisma.agency.findMany({
+      include: {
+        _count: {
+          select: { stores: true },
+        },
+      },
+      orderBy: { name: 'asc' },
     });
 
-    const areaCountMap = new Map<string, number>();
-    for (const s of stores) {
-      const areaName = s.area && s.area.trim() !== '' ? s.area : '（直営・未設定）';
-      areaCountMap.set(areaName, (areaCountMap.get(areaName) || 0) + 1);
-    }
+    // 2. 代理店未所属（agencyId が null）の店舗数をカウント
+    const unassignedStoreCount = await prisma.store.count({
+      where: { agencyId: null },
+    });
 
-    const agencies = Array.from(areaCountMap.entries()).map(([name, count]) => ({
-      id: encodeURIComponent(name),
-      name,
-      _count: { stores: count },
+    const result = agencies.map((a) => ({
+      id: a.id,
+      name: a.name,
+      _count: { stores: a._count.stores },
     }));
 
-    if (agencies.length === 0) {
-      agencies.push({
+    if (unassignedStoreCount > 0) {
+      result.push({
+        id: 'unassigned',
+        name: '（代理店未割り当て）',
+        _count: { stores: unassignedStoreCount },
+      });
+    }
+
+    if (result.length === 0) {
+      result.push({
         id: 'all',
-        name: '（全店舗・直営）',
+        name: '（全店舗）',
         _count: { stores: 0 },
       });
     }
 
-    return NextResponse.json({ agencies });
+    return NextResponse.json({ agencies: result });
   } catch (error: any) {
     console.error('API /api/agencies GET error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -6,23 +6,34 @@ export const revalidate = 0;
 export default async function Home() {
   let agencies: any[] = [];
   try {
-    const stores = await prisma.store.findMany({
-      select: { area: true, id: true },
+    const dbAgencies = await prisma.agency.findMany({
+      include: {
+        _count: {
+          select: { stores: true },
+        },
+      },
+      orderBy: { name: 'asc' },
     });
 
-    const areaCountMap = new Map<string, number>();
-    for (const s of stores) {
-      const areaName = s.area && s.area.trim() !== '' ? s.area : '（直営・未設定）';
-      areaCountMap.set(areaName, (areaCountMap.get(areaName) || 0) + 1);
-    }
+    const unassignedStoreCount = await prisma.store.count({
+      where: { agencyId: null },
+    });
 
-    agencies = Array.from(areaCountMap.entries()).map(([name, count]) => ({
-      id: encodeURIComponent(name),
-      name,
-      _count: { stores: count },
+    agencies = dbAgencies.map((a) => ({
+      id: a.id,
+      name: a.name,
+      _count: { stores: a._count.stores },
     }));
+
+    if (unassignedStoreCount > 0) {
+      agencies.push({
+        id: 'unassigned',
+        name: '（代理店未割り当て）',
+        _count: { stores: unassignedStoreCount },
+      });
+    }
   } catch (error) {
-    console.error('Failed to fetch store groups in Home:', error);
+    console.error('Failed to fetch agencies in Home:', error);
   }
 
   return <MainStoreList initialAgencies={agencies} />;

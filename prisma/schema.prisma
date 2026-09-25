@@ -6,6 +6,15 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model Agency {
+  id           String    @id
+  name         String
+  contactEmail String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime?
+  stores       Store[]
+}
+
 model Store {
   id                  String               @id
   name                String
@@ -17,10 +26,14 @@ model Store {
   centerLongitude     Float?
   intervalMeters      Int                  @default(500)
   isMeasurementActive Boolean              @default(true) // 計測ON/OFFスイッチ (falseの場合は一括計測から除外)
+  agencyId            String?
+  agency              Agency?              @relation(fields: [agencyId], references: [id])
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   gridKeywords        GridKeyword[]
   gridMeasurementRuns GridMeasurementRun[]
+
+  @@index([agencyId])
 }
 
 model GridKeyword {

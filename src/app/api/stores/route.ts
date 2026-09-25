@@ -10,13 +10,10 @@ export async function GET(request: Request) {
     let whereClause: any = {};
 
     if (agencyId) {
-      const decodedArea = decodeURIComponent(agencyId);
-      if (decodedArea === '（直営・未設定）') {
-        whereClause = {
-          OR: [{ area: null }, { area: '' }],
-        };
-      } else if (decodedArea !== 'all') {
-        whereClause = { area: decodedArea };
+      if (agencyId === 'unassigned') {
+        whereClause = { agencyId: null };
+      } else if (agencyId !== 'all') {
+        whereClause = { agencyId };
       }
     } else if (search && search.trim() !== '') {
       const q = search.trim();
@@ -26,6 +23,11 @@ export async function GET(request: Request) {
           { targetName: { contains: q, mode: 'insensitive' } },
           { area: { contains: q, mode: 'insensitive' } },
           { industry: { contains: q, mode: 'insensitive' } },
+          {
+            agency: {
+              name: { contains: q, mode: 'insensitive' },
+            },
+          },
           {
             gridKeywords: {
               some: {
@@ -40,6 +42,7 @@ export async function GET(request: Request) {
     const stores = await prisma.store.findMany({
       where: whereClause,
       include: {
+        agency: true,
         gridKeywords: true,
         gridMeasurementRuns: {
           where: { status: 'COMPLETED' },
@@ -59,10 +62,10 @@ export async function GET(request: Request) {
       address: s.area || null,
       intervalMeters: s.intervalMeters ?? 500,
       isMeasurementActive: s.isMeasurementActive ?? true,
-      agencyId: encodeURIComponent(s.area || '（直営・未設定）'),
+      agencyId: s.agencyId || 'unassigned',
       agency: {
-        id: encodeURIComponent(s.area || '（直営・未設定）'),
-        name: s.area || '（直営・未設定）',
+        id: s.agencyId || 'unassigned',
+        name: s.agency?.name || '（代理店未割り当て）',
       },
       keywords: s.gridKeywords.map((k) => ({
         id: k.id,
