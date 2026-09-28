@@ -147,6 +147,16 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// 代理店グループ
+model Agency {
+  id           String    @id
+  name         String
+  contactEmail String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime?
+  stores       Store[]
+}
+
 // 店舗情報
 model Store {
   id                  String               @id
@@ -159,10 +169,14 @@ model Store {
   centerLongitude     Float?
   intervalMeters      Int                  @default(500) // グリッド間隔（メートル）
   isMeasurementActive Boolean              @default(true) // 計測ON/OFF
+  agencyId            String?
+  agency              Agency?              @relation(fields: [agencyId], references: [id])
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   gridKeywords        GridKeyword[]
   gridMeasurementRuns GridMeasurementRun[]
+
+  @@index([agencyId])
 }
 
 // 計測キーワード
@@ -224,10 +238,11 @@ model GridRankResult {
 * **4〜10位**: ライトグリーン / イエロー (`bg-lime-400 text-slate-900 font-bold`)
 * **11〜20位**: オレンジ (`bg-orange-500 text-white font-bold`)
 * **21位以上 / 圏外**: グレー (`bg-slate-300 text-slate-600`)
+* **平均順位表示ルール**: 49地点全域で20位以内に入っていない（圏外）の場合、誤解を防ぐため「21位」ではなく「**21位以下**」と明確に表示。
 
 ### 画面一覧 & 操作機能
 1. **トップ画面 (`/`)**:
-   * エリア別店舗一覧（アコーディオン形式）
+   * 代理店・エリア別店舗一覧（アコーディオン形式）
    * 各店舗ごとの **計測ON/OFF切り替えスイッチ**
    * 展開時の「非同期・遅延ロード（Lazy Loading）」による店舗一覧表示
    * リアルタイム サーバーサイド検索バー（店舗名・判定名・住所・キーワード）
@@ -237,7 +252,7 @@ model GridRankResult {
    * **キーワード編集・管理モーダル**: 全キーワードの追加・テキスト編集・削除・カテゴリ変更（上限バッジ ＆ 重複防止 ＆ 自動ソート）
    * **ワンクリック移動ボタン**: 「このワードを『最近外したワード』に移す」「★ メインに戻す」
    * キーワード切替タブ（★MAIN / サブ / 最近外したワード）
-   * 統計サマリーカード（平均順位, TOP3地点数, TOP20地点数, 前回比 ▲/▼ 改善差分）
+   * 統計サマリーカード（平均順位: `21位以下` 対応, TOP3地点数, TOP20地点数, 前回比 ▲/▼ 改善差分）
    * 7×7 グリッドマップ（色分け・中心ピン・ホバー詳細）
    * ワード別 比較レポートテーブル（PC・スマホ対応）
    * 過去計測セッションの履歴切り替えドロップダウン

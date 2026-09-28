@@ -401,6 +401,12 @@ export default function GridDashboard({
     (s) => s.keywordText === currentKeyword?.keywordText || s.keywordId === currentKeyword?.keywordId
   );
 
+  const formatRank = (rank?: number | null) => {
+    if (rank === undefined || rank === null) return '-';
+    if (rank >= 21) return '21位以下';
+    return `${rank}位`;
+  };
+
   const calcDiff = (curr?: number, prev?: number, isLowerBetter = true) => {
     if (curr === undefined || prev === undefined) return null;
     const diff = Number((curr - prev).toFixed(1));
@@ -864,7 +870,7 @@ export default function GridDashboard({
                             : 'bg-slate-200 text-slate-700'
                         }`}
                       >
-                        {kw.avgRank}位
+                        {formatRank(kw.avgRank)}
                       </span>
                     </button>
                   );
@@ -889,9 +895,11 @@ export default function GridDashboard({
                   <div className="mt-3 flex items-baseline justify-between">
                     <div>
                       <span className="text-3xl font-extrabold text-slate-900">
-                        {currentKeyword.avgRank}
+                        {currentKeyword.avgRank >= 21 ? '21位以下' : currentKeyword.avgRank}
                       </span>
-                      <span className="text-sm text-slate-500 font-normal ml-1">位</span>
+                      {currentKeyword.avgRank < 21 && (
+                        <span className="text-sm text-slate-500 font-normal ml-1">位</span>
+                      )}
                     </div>
 
                     {previousKeyword && (() => {
@@ -910,7 +918,7 @@ export default function GridDashboard({
                           {res.status === 'improved' && <TrendingUp className="w-3.5 h-3.5 mr-1" />}
                           {res.status === 'worsened' && <TrendingDown className="w-3.5 h-3.5 mr-1" />}
                           {res.status === 'neutral' && <Minus className="w-3.5 h-3.5 mr-1" />}
-                          <span>{previousKeyword.avgRank}位 → {currentKeyword.avgRank}位 ({res.text})</span>
+                          <span>{formatRank(previousKeyword.avgRank)} → {formatRank(currentKeyword.avgRank)} ({res.text})</span>
                         </div>
                       );
                     })()}
@@ -1166,8 +1174,8 @@ export default function GridDashboard({
 
                           <td className="py-4 px-4 text-center">
                             <div className="font-bold text-slate-900">
-                              {prevKw ? `${prevKw.avgRank}位 → ` : ''}
-                              <span className="text-indigo-600">{kw.avgRank}位</span>
+                              {prevKw ? `${formatRank(prevKw.avgRank)} → ` : ''}
+                              <span className="text-indigo-600">{formatRank(kw.avgRank)}</span>
                             </div>
                             {rankDiff && (
                               <div
@@ -1320,10 +1328,10 @@ export default function GridDashboard({
                         <div className="bg-white p-2.5 rounded-lg border border-slate-200/60">
                           <div className="text-[10px] font-semibold text-slate-500 mb-1">平均順位</div>
                           <div className="font-bold text-slate-800 text-xs">
-                            {prevKw ? `${prevKw.avgRank}位→` : ''}
+                            {prevKw ? `${formatRank(prevKw.avgRank)} →` : ''}
                           </div>
                           <div className="font-extrabold text-indigo-600 text-sm">
-                            {kw.avgRank}位
+                            {formatRank(kw.avgRank)}
                           </div>
                           {rankDiff && (
                             <span
