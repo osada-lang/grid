@@ -11,15 +11,26 @@ export async function POST(request: Request) {
 }
 
 async function handleCronJob(request: Request) {
-  // CRON_SECRET の検証（環境変数で設定されている場合）
+  // CRON_SECRET の検証（環境変数または365ボイス標準シークレット: thanx_cron_secret_2026）
   const authHeader = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET;
+  const envSecret = process.env.CRON_SECRET;
+  const defaultSecret = 'thanx_cron_secret_2026';
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    const { searchParams } = new URL(request.url);
-    if (searchParams.get('secret') !== cronSecret) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  const { searchParams } = new URL(request.url);
+  const secretParam = searchParams.get('secret') || searchParams.get('key');
+
+  const validSecrets = [defaultSecret, envSecret].filter(Boolean) as string[];
+
+  const isHeaderValid = validSecrets.some(
+    (s) => authHeader === `Bearer ${s}` || authHeader === s
+  );
+  const isParamValid = validSecrets.some((s) => secretParam === s);
+
+  if (!isHeaderValid && !isParamValid) {
+    return NextResponse.json(
+      { error: 'Unauthorized: Invalid cron authorization token.' },
+      { status: 401 }
+    );
   }
 
   try {
@@ -32,9 +43,19 @@ async function handleCronJob(request: Request) {
     for (const store of stores) {
       try {
         const run = await executeStoreMeasurement(store.id);
-        results.push({ storeId: store.id, storeName: store.name, status: 'SUCCESS', runId: run.id });
+        results.push({
+          storeId: store.id,
+          storeName: store.name,
+          status: 'SUCCESS',
+          runId: run.id,
+        });
       } catch (err: any) {
-        results.push({ storeId: store.id, storeName: store.name, status: 'FAILED', error: err.message });
+        results.push({
+          storeId: store.id,
+          storeName: store.name,
+          status: 'FAILED',
+          error: err.message,
+        });
       }
     }
 
