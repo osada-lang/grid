@@ -21,12 +21,13 @@ function normalizeText(text: string): string {
 
 /**
  * 1地点におけるキーワードでのGoogleマップ/ローカル検索順位を取得
- * （本番仕様：モック計算は行わず、実APIで順位を取得。未設定や通信エラー時は明確にエラーをスロー）
+ * （GBP Place IDがある場合はID完全一致で優先判定、未設定時は店舗名で自動照合）
  */
 export async function fetchRankAtPoint(
   keyword: string,
   point: GridPoint,
-  targetName: string
+  targetName: string,
+  placeId?: string | null
 ): Promise<RankFetchResult> {
   const serpApiKey = process.env.SERPAPI_KEY;
 
@@ -51,14 +52,34 @@ export async function fetchRankAtPoint(
   }
 
   const data = await res.json();
-  const localResults: Array<{ position: number; title: string }> = data.local_results || [];
+  const localResults: Array<{
+    position: number;
+    title: string;
+    place_id?: string;
+    data_id?: string;
+    place_id_search?: string;
+  }> = data.local_results || [];
 
-  // targetName に部分一致する店舗を検索（空白・記号の揺らぎを吸収）
-  const normTarget = normalizeText(targetName);
-  const match = localResults.find((item) => {
-    const normTitle = normalizeText(item.title || '');
-    return normTitle.includes(normTarget) || normTarget.includes(normTitle);
-  });
+  let match: { position: number; title: string } | undefined;
+
+  // 1. 【最優先】Googleビジネスプロフィール Place ID で完全一致照合
+  if (placeId && placeId.trim() !== '') {
+    const cleanPlaceId = placeId.trim();
+    match = localResults.find((item) =>
+      item.place_id === cleanPlaceId ||
+      item.data_id === cleanPlaceId ||
+      item.place_id_search?.includes(cleanPlaceId)
+    );
+  }
+
+  // 2. 【フォールバック】Place IDで未検出、または未設定時は店舗名（表記揺れ吸収）で照合
+  if (!match) {
+    const normTarget = normalizeText(targetName);
+    match = localResults.find((item) => {
+      const normTitle = normalizeText(item.title || '');
+      return normTitle.includes(normTarget) || normTarget.includes(normTitle);
+    });
+  }
 
   return {
     latitude: point.latitude,

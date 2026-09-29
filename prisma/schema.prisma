@@ -24,8 +24,9 @@ model Store {
   targetName          String?              // マッチング判定用店舗名
   centerLatitude      Float?
   centerLongitude     Float?
+  gbpPlaceId          String?              // Googleビジネスプロフィール Place ID
   intervalMeters      Int                  @default(500)
-  isMeasurementActive Boolean              @default(true) // 計測ON/OFFスイッチ (falseの場合は一括計測から除外)
+  isMeasurementActive Boolean              @default(false) // 計測ON/OFFスイッチ（アカウント発行時初期値: OFF）
   agencyId            String?
   agency              Agency?              @relation(fields: [agencyId], references: [id])
   createdAt           DateTime             @default(now())

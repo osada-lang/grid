@@ -99,7 +99,8 @@ export async function executeStoreMeasurement(
           const result = await fetchRankAtPoint(
             keyword.keywordText,
             point,
-            targetName
+            targetName,
+            store.gbpPlaceId
           );
 
           return {
