@@ -1269,10 +1269,10 @@ export default function GridDashboard({
                             <div>
                               <span className="font-bold text-slate-900">{kw.top3Count}地点</span>
                             </div>
-                            <div className="space-y-0.5 mt-0.5">
+                            <div className="flex flex-col items-center gap-1 mt-1">
                               {top3Diff && (
                                 <div
-                                  className={`text-[11px] font-bold inline-block px-2 py-0.5 rounded-full ${
+                                  className={`text-[11px] font-bold inline-block px-2 py-0.5 rounded-full whitespace-nowrap ${
                                     top3Diff.status === 'improved'
                                       ? 'bg-emerald-100 text-emerald-700'
                                       : top3Diff.status === 'worsened'
@@ -1287,7 +1287,7 @@ export default function GridDashboard({
                                 const iDiff = calcDiff(kw.top3Count, initKw.top3Count, false);
                                 if (!iDiff) return null;
                                 return (
-                                  <div className="block text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+                                  <div className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200 whitespace-nowrap">
                                     累計 {iDiff.text}
                                   </div>
                                 );
@@ -1299,10 +1299,10 @@ export default function GridDashboard({
                             <div>
                               <span className="font-bold text-slate-900">{kw.top20Count}地点</span>
                             </div>
-                            <div className="space-y-0.5 mt-0.5">
+                            <div className="flex flex-col items-center gap-1 mt-1">
                               {top20Diff && (
                                 <div
-                                  className={`text-[11px] font-bold inline-block px-2 py-0.5 rounded-full ${
+                                  className={`text-[11px] font-bold inline-block px-2 py-0.5 rounded-full whitespace-nowrap ${
                                     top20Diff.status === 'improved'
                                       ? 'bg-emerald-100 text-emerald-700'
                                       : top20Diff.status === 'worsened'
@@ -1317,7 +1317,7 @@ export default function GridDashboard({
                                 const iDiff = calcDiff(kw.top20Count, initKw.top20Count, false);
                                 if (!iDiff) return null;
                                 return (
-                                  <div className="block text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+                                  <div className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200 whitespace-nowrap">
                                     累計 {iDiff.text}
                                   </div>
                                 );
@@ -1460,10 +1460,10 @@ export default function GridDashboard({
                               {kw.top3Count}地点
                             </div>
                           </div>
-                          <div className="space-y-1 mt-1">
+                          <div className="flex flex-col items-center gap-1 mt-1">
                             {top3Diff && (
                               <span
-                                className={`block text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap ${
                                   top3Diff.status === 'improved'
                                     ? 'bg-emerald-100 text-emerald-700'
                                     : top3Diff.status === 'worsened'
@@ -1478,7 +1478,7 @@ export default function GridDashboard({
                               const iDiff = calcDiff(kw.top3Count, initKw.top3Count, false);
                               if (!iDiff) return null;
                               return (
-                                <span className="block text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+                                <span className="inline-block text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200 whitespace-nowrap">
                                   累計 {iDiff.text}
                                 </span>
                               );
@@ -1494,10 +1494,10 @@ export default function GridDashboard({
                               {kw.top20Count}地点
                             </div>
                           </div>
-                          <div className="space-y-1 mt-1">
+                          <div className="flex flex-col items-center gap-1 mt-1">
                             {top20Diff && (
                               <span
-                                className={`block text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap ${
                                   top20Diff.status === 'improved'
                                     ? 'bg-emerald-100 text-emerald-700'
                                     : top20Diff.status === 'worsened'
@@ -1512,7 +1512,7 @@ export default function GridDashboard({
                               const iDiff = calcDiff(kw.top20Count, initKw.top20Count, false);
                               if (!iDiff) return null;
                               return (
-                                <span className="block text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+                                <span className="inline-block text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200 whitespace-nowrap">
                                   累計 {iDiff.text}
                                 </span>
                               );
