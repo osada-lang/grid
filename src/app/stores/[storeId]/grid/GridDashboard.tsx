@@ -959,7 +959,7 @@ export default function GridDashboard({
                       <Award className="w-5 h-5" />
                     </div>
                   </div>
-                  <div className="mt-3 flex items-baseline justify-between">
+                  <div className="mt-3 flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
                     <div>
                       <span className="text-3xl font-extrabold text-slate-900">
                         {currentKeyword.top3Count}
@@ -969,23 +969,35 @@ export default function GridDashboard({
                       </span>
                     </div>
 
-                    {previousKeyword && (() => {
-                      const res = calcDiff(currentKeyword.top3Count, previousKeyword.top3Count, false);
-                      if (!res) return null;
-                      return (
-                        <div
-                          className={`flex items-center text-xs font-bold px-2.5 py-1 rounded-full ${
-                            res.status === 'improved'
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : res.status === 'worsened'
-                              ? 'bg-rose-100 text-rose-700'
-                              : 'bg-slate-100 text-slate-600'
-                          }`}
-                        >
-                          {previousKeyword.top3Count}地点 → {currentKeyword.top3Count}地点
-                        </div>
-                      );
-                    })()}
+                    <div className="flex flex-col items-start sm:items-end gap-1">
+                      {previousKeyword && (() => {
+                        const res = calcDiff(currentKeyword.top3Count, previousKeyword.top3Count, false);
+                        if (!res) return null;
+                        return (
+                          <div
+                            className={`flex items-center text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                              res.status === 'improved'
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : res.status === 'worsened'
+                                ? 'bg-rose-100 text-rose-700'
+                                : 'bg-slate-100 text-slate-600'
+                            }`}
+                          >
+                            <span>前回比: {previousKeyword.top3Count}地点 → {currentKeyword.top3Count}地点 ({res.text})</span>
+                          </div>
+                        );
+                      })()}
+
+                      {hasDistinctInitial && initialKeyword && (() => {
+                        const res = calcDiff(currentKeyword.top3Count, initialKeyword.top3Count, false);
+                        if (!res) return null;
+                        return (
+                          <div className="flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+                            <span>初回比: {initialKeyword.top3Count}地点 → {currentKeyword.top3Count}地点 (累計 {res.text})</span>
+                          </div>
+                        );
+                      })()}
+                    </div>
                   </div>
                 </div>
 
@@ -1000,7 +1012,7 @@ export default function GridDashboard({
                         <Target className="w-5 h-5" />
                       </div>
                     </div>
-                    <div className="mt-3 flex items-baseline justify-between">
+                    <div className="mt-3 flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
                       <div>
                         <span className="text-3xl font-extrabold text-slate-900">
                           {currentKeyword.top20Count}
@@ -1010,23 +1022,35 @@ export default function GridDashboard({
                         </span>
                       </div>
 
-                      {previousKeyword && (() => {
-                        const res = calcDiff(currentKeyword.top20Count, previousKeyword.top20Count, false);
-                        if (!res) return null;
-                        return (
-                          <div
-                            className={`flex items-center text-xs font-bold px-2.5 py-1 rounded-full ${
-                              res.status === 'improved'
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : res.status === 'worsened'
-                                ? 'bg-rose-100 text-rose-700'
-                                : 'bg-slate-100 text-slate-600'
-                            }`}
-                          >
-                            {previousKeyword.top20Count}地点 → {currentKeyword.top20Count}地点
-                          </div>
-                        );
-                      })()}
+                      <div className="flex flex-col items-start sm:items-end gap-1">
+                        {previousKeyword && (() => {
+                          const res = calcDiff(currentKeyword.top20Count, previousKeyword.top20Count, false);
+                          if (!res) return null;
+                          return (
+                            <div
+                              className={`flex items-center text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                                res.status === 'improved'
+                                  ? 'bg-emerald-100 text-emerald-700'
+                                  : res.status === 'worsened'
+                                  ? 'bg-rose-100 text-rose-700'
+                                  : 'bg-slate-100 text-slate-600'
+                              }`}
+                            >
+                              <span>前回比: {previousKeyword.top20Count}地点 → {currentKeyword.top20Count}地点 ({res.text})</span>
+                            </div>
+                          );
+                        })()}
+
+                        {hasDistinctInitial && initialKeyword && (() => {
+                          const res = calcDiff(currentKeyword.top20Count, initialKeyword.top20Count, false);
+                          if (!res) return null;
+                          return (
+                            <div className="flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+                              <span>初回比: {initialKeyword.top20Count}地点 → {currentKeyword.top20Count}地点 (累計 {res.text})</span>
+                            </div>
+                          );
+                        })()}
+                      </div>
                     </div>
                   </div>
 
@@ -1243,42 +1267,62 @@ export default function GridDashboard({
 
                           <td className="py-4 px-4 text-center">
                             <div>
-                              {prevKw ? `${prevKw.top3Count}地点 → ` : ''}
                               <span className="font-bold text-slate-900">{kw.top3Count}地点</span>
                             </div>
-                            {top3Diff && (
-                              <div
-                                className={`text-xs font-bold mt-0.5 inline-block px-2 py-0.5 rounded-full ${
-                                  top3Diff.status === 'improved'
-                                    ? 'bg-emerald-100 text-emerald-700'
-                                    : top3Diff.status === 'worsened'
-                                    ? 'bg-rose-100 text-rose-700'
-                                    : 'text-slate-500'
-                                }`}
-                              >
-                                {top3Diff.text}
-                              </div>
-                            )}
+                            <div className="space-y-0.5 mt-0.5">
+                              {top3Diff && (
+                                <div
+                                  className={`text-[11px] font-bold inline-block px-2 py-0.5 rounded-full ${
+                                    top3Diff.status === 'improved'
+                                      ? 'bg-emerald-100 text-emerald-700'
+                                      : top3Diff.status === 'worsened'
+                                      ? 'bg-rose-100 text-rose-700'
+                                      : 'text-slate-500'
+                                  }`}
+                                >
+                                  前回比 {top3Diff.text}
+                                </div>
+                              )}
+                              {hasDistinctInitial && initKw && (() => {
+                                const iDiff = calcDiff(kw.top3Count, initKw.top3Count, false);
+                                if (!iDiff) return null;
+                                return (
+                                  <div className="block text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+                                    累計 {iDiff.text}
+                                  </div>
+                                );
+                              })()}
+                            </div>
                           </td>
 
                           <td className="py-4 px-4 text-center">
                             <div>
-                              {prevKw ? `${prevKw.top20Count}地点 → ` : ''}
                               <span className="font-bold text-slate-900">{kw.top20Count}地点</span>
                             </div>
-                            {top20Diff && (
-                              <div
-                                className={`text-xs font-bold mt-0.5 inline-block px-2 py-0.5 rounded-full ${
-                                  top20Diff.status === 'improved'
-                                    ? 'bg-emerald-100 text-emerald-700'
-                                    : top20Diff.status === 'worsened'
-                                    ? 'bg-rose-100 text-rose-700'
-                                    : 'text-slate-500'
-                                }`}
-                              >
-                                {top20Diff.text}
-                              </div>
-                            )}
+                            <div className="space-y-0.5 mt-0.5">
+                              {top20Diff && (
+                                <div
+                                  className={`text-[11px] font-bold inline-block px-2 py-0.5 rounded-full ${
+                                    top20Diff.status === 'improved'
+                                      ? 'bg-emerald-100 text-emerald-700'
+                                      : top20Diff.status === 'worsened'
+                                      ? 'bg-rose-100 text-rose-700'
+                                      : 'text-slate-500'
+                                  }`}
+                                >
+                                  前回比 {top20Diff.text}
+                                </div>
+                              )}
+                              {hasDistinctInitial && initKw && (() => {
+                                const iDiff = calcDiff(kw.top20Count, initKw.top20Count, false);
+                                if (!iDiff) return null;
+                                return (
+                                  <div className="block text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+                                    累計 {iDiff.text}
+                                  </div>
+                                );
+                              })()}
+                            </div>
                           </td>
 
                           <td className="py-4 px-4 text-right">
@@ -1409,51 +1453,71 @@ export default function GridDashboard({
                         </div>
 
                         {/* TOP3地点数 */}
-                        <div className="bg-white p-2.5 rounded-lg border border-slate-200/60">
-                          <div className="text-[10px] font-semibold text-slate-500 mb-1">TOP3地点</div>
-                          <div className="font-bold text-slate-800 text-xs">
-                            {prevKw ? `${prevKw.top3Count}→` : ''}
+                        <div className="bg-white p-2.5 rounded-lg border border-slate-200/60 flex flex-col justify-between">
+                          <div>
+                            <div className="text-[10px] font-semibold text-slate-500 mb-1">TOP3地点</div>
+                            <div className="font-extrabold text-slate-900 text-sm">
+                              {kw.top3Count}地点
+                            </div>
                           </div>
-                          <div className="font-extrabold text-slate-900 text-sm">
-                            {kw.top3Count}地点
+                          <div className="space-y-1 mt-1">
+                            {top3Diff && (
+                              <span
+                                className={`block text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                  top3Diff.status === 'improved'
+                                    ? 'bg-emerald-100 text-emerald-700'
+                                    : top3Diff.status === 'worsened'
+                                    ? 'bg-rose-100 text-rose-700'
+                                    : 'text-slate-500'
+                                }`}
+                              >
+                                前回比 {top3Diff.text}
+                              </span>
+                            )}
+                            {hasDistinctInitial && initKw && (() => {
+                              const iDiff = calcDiff(kw.top3Count, initKw.top3Count, false);
+                              if (!iDiff) return null;
+                              return (
+                                <span className="block text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+                                  累計 {iDiff.text}
+                                </span>
+                              );
+                            })()}
                           </div>
-                          {top3Diff && (
-                            <span
-                              className={`mt-1 inline-block text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                                top3Diff.status === 'improved'
-                                  ? 'bg-emerald-100 text-emerald-700'
-                                  : top3Diff.status === 'worsened'
-                                  ? 'bg-rose-100 text-rose-700'
-                                  : 'text-slate-500'
-                              }`}
-                            >
-                              {top3Diff.text}
-                            </span>
-                          )}
                         </div>
 
                         {/* TOP20地点数 */}
-                        <div className="bg-white p-2.5 rounded-lg border border-slate-200/60">
-                          <div className="text-[10px] font-semibold text-slate-500 mb-1">TOP20地点</div>
-                          <div className="font-bold text-slate-800 text-xs">
-                            {prevKw ? `${prevKw.top20Count}→` : ''}
+                        <div className="bg-white p-2.5 rounded-lg border border-slate-200/60 flex flex-col justify-between">
+                          <div>
+                            <div className="text-[10px] font-semibold text-slate-500 mb-1">TOP20地点</div>
+                            <div className="font-extrabold text-slate-900 text-sm">
+                              {kw.top20Count}地点
+                            </div>
                           </div>
-                          <div className="font-extrabold text-slate-900 text-sm">
-                            {kw.top20Count}地点
+                          <div className="space-y-1 mt-1">
+                            {top20Diff && (
+                              <span
+                                className={`block text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                  top20Diff.status === 'improved'
+                                    ? 'bg-emerald-100 text-emerald-700'
+                                    : top20Diff.status === 'worsened'
+                                    ? 'bg-rose-100 text-rose-700'
+                                    : 'text-slate-500'
+                                }`}
+                              >
+                                前回比 {top20Diff.text}
+                              </span>
+                            )}
+                            {hasDistinctInitial && initKw && (() => {
+                              const iDiff = calcDiff(kw.top20Count, initKw.top20Count, false);
+                              if (!iDiff) return null;
+                              return (
+                                <span className="block text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+                                  累計 {iDiff.text}
+                                </span>
+                              );
+                            })()}
                           </div>
-                          {top20Diff && (
-                            <span
-                              className={`mt-1 inline-block text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                                top20Diff.status === 'improved'
-                                  ? 'bg-emerald-100 text-emerald-700'
-                                  : top20Diff.status === 'worsened'
-                                  ? 'bg-rose-100 text-rose-700'
-                                  : 'text-slate-500'
-                              }`}
-                            >
-                              {top20Diff.text}
-                            </span>
-                          )}
                         </div>
                       </div>
                     </div>
