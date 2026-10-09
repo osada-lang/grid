@@ -86,6 +86,7 @@ export default function GridDashboard({
     store: StoreData;
     latestRun: RunData | null;
     previousRun: RunData | null;
+    initialRun?: RunData | null;
     historyRuns: HistoryRun[];
   } | null;
 }) {
@@ -95,6 +96,7 @@ export default function GridDashboard({
     store: StoreData;
     latestRun: RunData | null;
     previousRun: RunData | null;
+    initialRun?: RunData | null;
     historyRuns: HistoryRun[];
   } | null>(initialData || null);
 
@@ -388,7 +390,7 @@ export default function GridDashboard({
     );
   }
 
-  const { store, latestRun, previousRun, historyRuns } = data;
+  const { store, latestRun, previousRun, initialRun, historyRuns } = data;
 
   const currentRun = latestRun;
   const currentKeyword =
@@ -400,6 +402,16 @@ export default function GridDashboard({
   const previousKeyword = previousRun?.summaries.find(
     (s) => s.keywordText === currentKeyword?.keywordText || s.keywordId === currentKeyword?.keywordId
   );
+
+  const initialKeyword = initialRun?.summaries.find(
+    (s) => s.keywordText === currentKeyword?.keywordText || s.keywordId === currentKeyword?.keywordId
+  );
+
+  const hasDistinctInitial =
+    initialRun &&
+    latestRun &&
+    initialRun.runId !== latestRun.runId &&
+    initialRun.runId !== previousRun?.runId;
 
   const formatRank = (rank?: number | null) => {
     if (rank === undefined || rank === null) return '-';
@@ -892,7 +904,7 @@ export default function GridDashboard({
                       <BarChart2 className="w-5 h-5" />
                     </div>
                   </div>
-                  <div className="mt-3 flex items-baseline justify-between">
+                  <div className="mt-3 flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
                     <div>
                       <span className="text-3xl font-extrabold text-slate-900">
                         {currentKeyword.avgRank >= 21 ? '21位以下' : currentKeyword.avgRank}
@@ -902,26 +914,38 @@ export default function GridDashboard({
                       )}
                     </div>
 
-                    {previousKeyword && (() => {
-                      const res = calcDiff(currentKeyword.avgRank, previousKeyword.avgRank, true);
-                      if (!res) return null;
-                      return (
-                        <div
-                          className={`flex items-center text-xs font-bold px-2.5 py-1 rounded-full ${
-                            res.status === 'improved'
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : res.status === 'worsened'
-                              ? 'bg-rose-100 text-rose-700'
-                              : 'bg-slate-100 text-slate-600'
-                          }`}
-                        >
-                          {res.status === 'improved' && <TrendingUp className="w-3.5 h-3.5 mr-1" />}
-                          {res.status === 'worsened' && <TrendingDown className="w-3.5 h-3.5 mr-1" />}
-                          {res.status === 'neutral' && <Minus className="w-3.5 h-3.5 mr-1" />}
-                          <span>{formatRank(previousKeyword.avgRank)} → {formatRank(currentKeyword.avgRank)} ({res.text})</span>
-                        </div>
-                      );
-                    })()}
+                    <div className="flex flex-col items-start sm:items-end gap-1">
+                      {previousKeyword && (() => {
+                        const res = calcDiff(currentKeyword.avgRank, previousKeyword.avgRank, true);
+                        if (!res) return null;
+                        return (
+                          <div
+                            className={`flex items-center text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                              res.status === 'improved'
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : res.status === 'worsened'
+                                ? 'bg-rose-100 text-rose-700'
+                                : 'bg-slate-100 text-slate-600'
+                            }`}
+                          >
+                            {res.status === 'improved' && <TrendingUp className="w-3.5 h-3.5 mr-1" />}
+                            {res.status === 'worsened' && <TrendingDown className="w-3.5 h-3.5 mr-1" />}
+                            {res.status === 'neutral' && <Minus className="w-3.5 h-3.5 mr-1" />}
+                            <span>前回比: {formatRank(previousKeyword.avgRank)} → {formatRank(currentKeyword.avgRank)} ({res.text})</span>
+                          </div>
+                        );
+                      })()}
+
+                      {hasDistinctInitial && initialKeyword && (() => {
+                        const res = calcDiff(currentKeyword.avgRank, initialKeyword.avgRank, true);
+                        if (!res) return null;
+                        return (
+                          <div className="flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+                            <span>初回比: {formatRank(initialKeyword.avgRank)} → {formatRank(currentKeyword.avgRank)} (累計 {res.text})</span>
+                          </div>
+                        );
+                      })()}
+                    </div>
                   </div>
                 </div>
 
@@ -1121,7 +1145,9 @@ export default function GridDashboard({
                   <thead>
                     <tr className="border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                       <th className="py-3 px-4">測定ワード</th>
-                      <th className="py-3 px-4 text-center">平均順位</th>
+                      {hasDistinctInitial && <th className="py-3 px-4 text-center">初回順位</th>}
+                      <th className="py-3 px-4 text-center">前回順位</th>
+                      <th className="py-3 px-4 text-center">最新順位 (今回)</th>
                       <th className="py-3 px-4 text-center">TOP3地点数</th>
                       <th className="py-3 px-4 text-center">TOP20地点数</th>
                       <th className="py-3 px-4 text-right">マップ選択</th>
@@ -1130,9 +1156,11 @@ export default function GridDashboard({
                   <tbody className="divide-y divide-slate-100 text-sm">
                     {latestRun.summaries.map((kw, idx) => {
                       const prevKw = previousRun?.summaries.find((p) => p.keywordText === kw.keywordText || p.keywordId === kw.keywordId);
+                      const initKw = initialRun?.summaries.find((p) => p.keywordText === kw.keywordText || p.keywordId === kw.keywordId);
                       const isSelected = selectedKeywordIndex === idx;
 
                       const rankDiff = calcDiff(kw.avgRank, prevKw?.avgRank, true);
+                      const initDiff = calcDiff(kw.avgRank, initKw?.avgRank, true);
                       const top3Diff = calcDiff(kw.top3Count, prevKw?.top3Count, false);
                       const top20Diff = calcDiff(kw.top20Count, prevKw?.top20Count, false);
 
@@ -1172,14 +1200,28 @@ export default function GridDashboard({
                             </div>
                           </td>
 
+                          {/* 初回順位（初回ログが存在する場合のみ表示） */}
+                          {hasDistinctInitial && (
+                            <td className="py-4 px-4 text-center">
+                              <div className="font-bold text-slate-700">
+                                {initKw ? formatRank(initKw.avgRank) : '-'}
+                              </div>
+                              {initDiff && (
+                                <div className="text-[11px] font-bold mt-0.5 inline-block px-2 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+                                  累計 {initDiff.text}
+                                </div>
+                              )}
+                            </td>
+                          )}
+
+                          {/* 前回順位 */}
                           <td className="py-4 px-4 text-center">
-                            <div className="font-bold text-slate-900">
-                              {prevKw ? `${formatRank(prevKw.avgRank)} → ` : ''}
-                              <span className="text-indigo-600">{formatRank(kw.avgRank)}</span>
+                            <div className="font-bold text-slate-700">
+                              {prevKw ? formatRank(prevKw.avgRank) : '-'}
                             </div>
                             {rankDiff && (
                               <div
-                                className={`text-xs font-bold mt-0.5 inline-block px-2 py-0.5 rounded-full ${
+                                className={`text-[11px] font-bold mt-0.5 inline-block px-2 py-0.5 rounded-full ${
                                   rankDiff.status === 'improved'
                                     ? 'bg-emerald-100 text-emerald-700'
                                     : rankDiff.status === 'worsened'
@@ -1187,9 +1229,16 @@ export default function GridDashboard({
                                     : 'text-slate-500'
                                 }`}
                               >
-                                {rankDiff.text}
+                                前回比 {rankDiff.text}
                               </div>
                             )}
+                          </td>
+
+                          {/* 今回（最新順位） */}
+                          <td className="py-4 px-4 text-center">
+                            <div className="font-extrabold text-indigo-600 text-base">
+                              {formatRank(kw.avgRank)}
+                            </div>
                           </td>
 
                           <td className="py-4 px-4 text-center">
@@ -1261,9 +1310,11 @@ export default function GridDashboard({
                 </div>
                 {latestRun.summaries.map((kw, idx) => {
                   const prevKw = previousRun?.summaries.find((p) => p.keywordText === kw.keywordText || p.keywordId === kw.keywordId);
+                  const initKw = initialRun?.summaries.find((p) => p.keywordText === kw.keywordText || p.keywordId === kw.keywordId);
                   const isSelected = selectedKeywordIndex === idx;
 
                   const rankDiff = calcDiff(kw.avgRank, prevKw?.avgRank, true);
+                  const initDiff = calcDiff(kw.avgRank, initKw?.avgRank, true);
                   const top3Diff = calcDiff(kw.top3Count, prevKw?.top3Count, false);
                   const top20Diff = calcDiff(kw.top20Count, prevKw?.top20Count, false);
 
@@ -1325,27 +1376,36 @@ export default function GridDashboard({
                       {/* 数値変析グリッド */}
                       <div className="grid grid-cols-3 gap-2 text-center text-xs">
                         {/* 平均順位 */}
-                        <div className="bg-white p-2.5 rounded-lg border border-slate-200/60">
-                          <div className="text-[10px] font-semibold text-slate-500 mb-1">平均順位</div>
-                          <div className="font-bold text-slate-800 text-xs">
-                            {prevKw ? `${formatRank(prevKw.avgRank)} →` : ''}
+                        <div className="bg-white p-2.5 rounded-lg border border-slate-200/60 flex flex-col justify-between">
+                          <div>
+                            <div className="text-[10px] font-semibold text-slate-500 mb-1">平均順位</div>
+                            <div className="font-bold text-slate-800 text-xs">
+                              {prevKw ? `${formatRank(prevKw.avgRank)} →` : ''}
+                            </div>
+                            <div className="font-extrabold text-indigo-600 text-sm">
+                              {formatRank(kw.avgRank)}
+                            </div>
                           </div>
-                          <div className="font-extrabold text-indigo-600 text-sm">
-                            {formatRank(kw.avgRank)}
+                          <div className="space-y-1 mt-1">
+                            {rankDiff && (
+                              <span
+                                className={`block text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                  rankDiff.status === 'improved'
+                                    ? 'bg-emerald-100 text-emerald-700'
+                                    : rankDiff.status === 'worsened'
+                                    ? 'bg-rose-100 text-rose-700'
+                                    : 'text-slate-500'
+                                }`}
+                              >
+                                前回比 {rankDiff.text}
+                              </span>
+                            )}
+                            {hasDistinctInitial && initDiff && (
+                              <span className="block text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+                                累計 {initDiff.text}
+                              </span>
+                            )}
                           </div>
-                          {rankDiff && (
-                            <span
-                              className={`mt-1 inline-block text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                                rankDiff.status === 'improved'
-                                  ? 'bg-emerald-100 text-emerald-700'
-                                  : rankDiff.status === 'worsened'
-                                  ? 'bg-rose-100 text-rose-700'
-                                  : 'text-slate-500'
-                              }`}
-                            >
-                              {rankDiff.text}
-                            </span>
-                          )}
                         </div>
 
                         {/* TOP3地点数 */}

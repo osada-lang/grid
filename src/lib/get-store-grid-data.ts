@@ -28,15 +28,21 @@ export async function getStoreGridData(storeId: string, targetRunId?: string) {
     // 対象となる runId の決定（指定がなければ最新）
     const activeRunId = targetRunId || allRuns[0]?.id;
 
-    // activeRunId を基準にした対象データおよび直前データを取得
+    // activeRunId を基準にした対象データ、直前データ、および初回（最古）データを取得
     let latestRun = null;
     let previousRun = null;
+    let initialRun = null;
 
     if (activeRunId) {
       const activeIndex = allRuns.findIndex((r: any) => r.id === activeRunId);
+      const oldestRunId = allRuns[allRuns.length - 1]?.id;
+
       const runsToFetchIds = [activeRunId];
       if (activeIndex !== -1 && allRuns[activeIndex + 1]) {
         runsToFetchIds.push(allRuns[activeIndex + 1].id);
+      }
+      if (oldestRunId && !runsToFetchIds.includes(oldestRunId)) {
+        runsToFetchIds.push(oldestRunId);
       }
 
       const fetchedRuns = await prisma.gridMeasurementRun.findMany({
@@ -51,6 +57,9 @@ export async function getStoreGridData(storeId: string, targetRunId?: string) {
       latestRun = fetchedRuns.find((r: any) => r.id === activeRunId) || null;
       if (activeIndex !== -1 && allRuns[activeIndex + 1]) {
         previousRun = fetchedRuns.find((r: any) => r.id === allRuns[activeIndex + 1].id) || null;
+      }
+      if (oldestRunId) {
+        initialRun = fetchedRuns.find((r: any) => r.id === oldestRunId) || null;
       }
     }
 
@@ -136,6 +145,7 @@ export async function getStoreGridData(storeId: string, targetRunId?: string) {
 
     const latestProcessed = processRunData(latestRun);
     const previousProcessed = processRunData(previousRun);
+    const initialProcessed = processRunData(initialRun);
 
     return {
       store: {
@@ -150,6 +160,7 @@ export async function getStoreGridData(storeId: string, targetRunId?: string) {
       },
       latestRun: latestProcessed,
       previousRun: previousProcessed,
+      initialRun: initialProcessed,
       historyRuns: allRuns.map((r: any) => ({
         ...r,
         executedAt: r.executedAt.toISOString(),
