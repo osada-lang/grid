@@ -914,13 +914,13 @@ export default function GridDashboard({
                       )}
                     </div>
 
-                    <div className="flex flex-col items-start sm:items-end gap-1">
+                    <div className="flex flex-col items-start sm:items-end gap-1.5 shrink-0">
                       {previousKeyword && (() => {
                         const res = calcDiff(currentKeyword.avgRank, previousKeyword.avgRank, true);
                         if (!res) return null;
                         return (
                           <div
-                            className={`flex items-center text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                            className={`flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 ${
                               res.status === 'improved'
                                 ? 'bg-emerald-100 text-emerald-700'
                                 : res.status === 'worsened'
@@ -940,7 +940,7 @@ export default function GridDashboard({
                         const res = calcDiff(currentKeyword.avgRank, initialKeyword.avgRank, true);
                         if (!res) return null;
                         return (
-                          <div className="flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+                          <div className="flex items-center text-[10.5px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200 whitespace-nowrap shrink-0">
                             <span>初回比: {formatRank(initialKeyword.avgRank)} → {formatRank(currentKeyword.avgRank)} (累計 {res.text})</span>
                           </div>
                         );
@@ -969,13 +969,13 @@ export default function GridDashboard({
                       </span>
                     </div>
 
-                    <div className="flex flex-col items-start sm:items-end gap-1">
+                    <div className="flex flex-col items-start sm:items-end gap-1.5 shrink-0">
                       {previousKeyword && (() => {
                         const res = calcDiff(currentKeyword.top3Count, previousKeyword.top3Count, false);
                         if (!res) return null;
                         return (
                           <div
-                            className={`flex items-center text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                            className={`flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 ${
                               res.status === 'improved'
                                 ? 'bg-emerald-100 text-emerald-700'
                                 : res.status === 'worsened'
@@ -992,7 +992,7 @@ export default function GridDashboard({
                         const res = calcDiff(currentKeyword.top3Count, initialKeyword.top3Count, false);
                         if (!res) return null;
                         return (
-                          <div className="flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+                          <div className="flex items-center text-[10.5px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200 whitespace-nowrap shrink-0">
                             <span>初回比: {initialKeyword.top3Count}地点 → {currentKeyword.top3Count}地点 (累計 {res.text})</span>
                           </div>
                         );
@@ -1022,13 +1022,13 @@ export default function GridDashboard({
                         </span>
                       </div>
 
-                      <div className="flex flex-col items-start sm:items-end gap-1">
+                      <div className="flex flex-col items-start sm:items-end gap-1.5 shrink-0">
                         {previousKeyword && (() => {
                           const res = calcDiff(currentKeyword.top20Count, previousKeyword.top20Count, false);
                           if (!res) return null;
                           return (
                             <div
-                              className={`flex items-center text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                              className={`flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 ${
                                 res.status === 'improved'
                                   ? 'bg-emerald-100 text-emerald-700'
                                   : res.status === 'worsened'
@@ -1045,7 +1045,7 @@ export default function GridDashboard({
                           const res = calcDiff(currentKeyword.top20Count, initialKeyword.top20Count, false);
                           if (!res) return null;
                           return (
-                            <div className="flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+                            <div className="flex items-center text-[10.5px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200 whitespace-nowrap shrink-0">
                               <span>初回比: {initialKeyword.top20Count}地点 → {currentKeyword.top20Count}地点 (累計 {res.text})</span>
                             </div>
                           );
