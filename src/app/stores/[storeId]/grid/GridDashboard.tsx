@@ -22,7 +22,10 @@ import {
   X,
   Tag,
   ArrowRightLeft,
+  Home,
+  LogOut,
 } from 'lucide-react';
+import Link from 'next/link';
 
 interface GridPointResult {
   pointX: number;
@@ -330,6 +333,16 @@ export default function GridDashboard({
     }
   };
 
+  // ログアウト処理
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/login';
+    } catch {
+      window.location.href = '/login';
+    }
+  };
+
   // 今すぐ計測実行
   const handleManualMeasure = async () => {
     try {
@@ -505,6 +518,24 @@ export default function GridDashboard({
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${measuring ? 'animate-spin' : ''}`} />
               {measuring ? '計測実行中...' : '今すぐ計測実行'}
+            </button>
+
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-semibold px-3.5 py-2.5 rounded-xl border border-slate-200 transition"
+              title="店舗一覧へ戻る"
+            >
+              <Home className="w-4 h-4 mr-1.5 text-slate-500" />
+              <span>一覧へ</span>
+            </Link>
+
+            <button
+              onClick={handleLogout}
+              className="inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-semibold px-3 py-2.5 rounded-xl border border-slate-200 transition cursor-pointer"
+              title="ログアウト"
+            >
+              <LogOut className="w-4 h-4 mr-1.5 text-slate-500" />
+              <span>ログアウト</span>
             </button>
           </div>
         </div>

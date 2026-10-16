@@ -17,6 +17,7 @@ import {
   RefreshCw,
   Power,
   PowerOff,
+  LogOut,
   X,
 } from 'lucide-react';
 
@@ -155,6 +156,16 @@ export default function MainStoreList({
     }
   };
 
+  // ログアウト処理
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/login';
+    } catch {
+      window.location.href = '/login';
+    }
+  };
+
   // 全店舗一括計測実行
   const handleRunAllMeasurement = async () => {
     try {
@@ -221,6 +232,15 @@ export default function MainStoreList({
             >
               <Play className={`w-4 h-4 mr-1.5 ${measuring ? 'animate-spin' : ''}`} />
               {measuring ? '一括計測中...' : '全店舗 一括計測 (ON店舗のみ)'}
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="inline-flex items-center bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-semibold px-3 py-2.5 rounded-xl border border-slate-200 transition cursor-pointer"
+              title="ログアウト"
+            >
+              <LogOut className="w-4 h-4 mr-1.5 text-slate-500" />
+              <span>ログアウト</span>
             </button>
           </div>
         </div>
