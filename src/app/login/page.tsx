@@ -52,7 +52,7 @@ function LoginForm() {
 
       <div>
         <label className="block text-xs font-bold text-slate-700 mb-1.5">
-          マスター管理者 ID（メールアドレス）
+          ログインID
         </label>
         <div className="relative rounded-xl shadow-2xs">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -61,10 +61,9 @@ function LoginForm() {
           <input
             type="email"
             required
-            placeholder="admin@365voice.jp"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="block w-full pl-10 pr-3.5 py-2.5 border border-slate-300 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600 transition"
+            className="block w-full pl-10 pr-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600 transition"
           />
         </div>
       </div>
@@ -80,10 +79,9 @@ function LoginForm() {
           <input
             type="password"
             required
-            placeholder="••••••••••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="block w-full pl-10 pr-3.5 py-2.5 border border-slate-300 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600 transition"
+            className="block w-full pl-10 pr-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600 transition"
           />
         </div>
       </div>
